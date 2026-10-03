@@ -191,6 +191,85 @@ const view = {
     }
   },
 
+  drawFruit(ctx, food, cs) {
+    const cx = (food.x + 0.5) * cs;
+    const cy = (food.y + 0.5) * cs;
+    const type = food.type || 'apple';
+
+    if (type === 'apple') {
+      // 🍎 Quả Táo đỏ (+1)
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(cx, cy + cs * 0.04, cs * 0.36, 0, Math.PI * 2);
+      ctx.fill();
+      // Cuống lá xanh
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(cx - 1, cy - cs * 0.44, 3, cs * 0.18);
+      ctx.beginPath();
+      ctx.arc(cx + cs * 0.12, cy - cs * 0.34, cs * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+      // Điểm sáng
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.beginPath();
+      ctx.arc(cx - cs * 0.14, cy - cs * 0.08, cs * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (type === 'pineapple') {
+      // 🍍 Quả Dứa vàng (+2)
+      // Thân dứa
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + cs * 0.08, cs * 0.32, cs * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Vân mắt dứa
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = Math.max(1, cs * 0.04);
+      ctx.beginPath();
+      ctx.moveTo(cx - cs * 0.2, cy - cs * 0.1);
+      ctx.lineTo(cx + cs * 0.2, cy + cs * 0.25);
+      ctx.moveTo(cx + cs * 0.2, cy - cs * 0.1);
+      ctx.lineTo(cx - cs * 0.2, cy + cs * 0.25);
+      ctx.stroke();
+      // Chùm lá xanh trên đầu
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.moveTo(cx - cs * 0.2, cy - cs * 0.22);
+      ctx.lineTo(cx, cy - cs * 0.52);
+      ctx.lineTo(cx + cs * 0.2, cy - cs * 0.22);
+      ctx.lineTo(cx, cy - cs * 0.3);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type === 'watermelon') {
+      // 🍉 Quả Dưa hấu NGUYÊN QUẢ tròn xoe (+3)
+      // Thân quả tròn màu xanh lục
+      ctx.fillStyle = '#15803d';
+      ctx.beginPath();
+      ctx.arc(cx, cy, cs * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      // Sọc dưa màu xanh sẫm/đen uốn lượn đặc trưng của quả dưa hấu
+      ctx.strokeStyle = '#052e16';
+      ctx.lineWidth = Math.max(1.5, cs * 0.07);
+      ctx.lineCap = 'round';
+      [-0.24, -0.08, 0.08, 0.24].forEach((offset) => {
+        ctx.beginPath();
+        ctx.moveTo(cx + offset * cs, cy - cs * 0.32);
+        ctx.quadraticCurveTo(cx + offset * cs * 1.3, cy, cx + offset * cs, cy + cs * 0.32);
+        ctx.stroke();
+      });
+      // Cuống dưa cong nhỏ xíu trên đỉnh
+      ctx.strokeStyle = '#854d0e';
+      ctx.lineWidth = Math.max(1.5, cs * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - cs * 0.4);
+      ctx.quadraticCurveTo(cx + cs * 0.08, cy - cs * 0.48, cx + cs * 0.14, cy - cs * 0.44);
+      ctx.stroke();
+      // Chấm bóng nhẹ
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath();
+      ctx.arc(cx - cs * 0.18, cy - cs * 0.18, cs * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  },
+
   // Đặt độ phân giải canvas = kích thước hiển thị x mật độ điểm ảnh -> sắc nét trên màn rộng và iPhone/Android retina.
   fitCanvas(canvas) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -210,14 +289,7 @@ const view = {
     if (!game) return;
     const cs = canvas.width / game.width;
     if (game.food) {
-      const fx = (game.food.x + 0.5) * cs;
-      const fy = (game.food.y + 0.5) * cs;
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(fx, fy, cs * 0.36, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#22c55e';
-      ctx.fillRect(fx - 1, fy - cs * 0.5, 3, cs * 0.18);
+      this.drawFruit(ctx, game.food, cs);
     }
     game.snakes.forEach((s, i) => {
       if (!s.body.length) return; // chế độ chơi thử: không có rắn đối thủ

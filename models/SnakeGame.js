@@ -42,6 +42,7 @@ class SnakeGame {
       dir,
       queue: [],
       alive: true,
+      pendingGrowth: 0,
     };
   }
 
@@ -71,7 +72,31 @@ class SnakeGame {
     const free = [];
     for (let x = 0; x < W; x++)
       for (let y = 0; y < H; y++) if (!taken.has(x + ',' + y)) free.push({ x, y });
-    this.food = free.length ? free[Math.floor(Math.random() * free.length)] : null;
+    if (!free.length) {
+      this.food = null;
+      return;
+    }
+    const cell = free[Math.floor(Math.random() * free.length)];
+
+    // Xác suất:
+    // Táo: 50% (+1)
+    // Dứa: 30% (+2)
+    // Quả dưa hấu: 20% (+3)
+    const roll = Math.random();
+    let type = 'apple';
+    let growth = 1;
+    if (roll < 0.50) {
+      type = 'apple';
+      growth = 1;
+    } else if (roll < 0.80) {
+      type = 'pineapple';
+      growth = 2;
+    } else {
+      type = 'watermelon';
+      growth = 3;
+    }
+
+    this.food = { x: cell.x, y: cell.y, type, growth };
   }
 
   tick() {
@@ -83,8 +108,17 @@ class SnakeGame {
       const d = DIRS[s.dir];
       const head = { x: s.body[0].x + d.x, y: s.body[0].y + d.y };
       s.body.unshift(head);
-      if (this.food && head.x === this.food.x && head.y === this.food.y) ate = true;
-      else s.body.pop();
+
+      if (this.food && head.x === this.food.x && head.y === this.food.y) {
+        ate = true;
+        s.pendingGrowth += (this.food.growth - 1);
+      } else {
+        if (s.pendingGrowth > 0) {
+          s.pendingGrowth--;
+        } else {
+          s.body.pop();
+        }
+      }
     });
 
     this.snakes.forEach((s, i) => {
