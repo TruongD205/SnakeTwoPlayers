@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Rắn 2 người</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main>
+    <!-- Trang chủ: chọn trang phục -->
+    <section id="screen-customize" class="screen">
+      <h1>🐍 Rắn 2 người</h1>
+      <div class="label">Chọn trang phục cho rắn của bạn</div>
+      <canvas id="preview" width="160" height="160"></canvas>
+      <div class="label">Màu sắc</div>
+      <div id="colors" class="choices"></div>
+      <div class="label">Phụ kiện</div>
+      <div id="accs" class="choices"></div>
+      <button id="btn-continue">Tiếp tục ▶</button>
+    </section>
+
+    <!-- Tạo phòng / vào phòng -->
+    <section id="screen-menu" class="screen hidden">
+      <canvas id="preview-mini" width="100" height="100"></canvas>
+      <button id="btn-create">Tạo phòng</button>
+      <div class="or">hoặc</div>
+      <input id="input-code" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="Nhập mã 4 số" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')" />
+      <button id="btn-join">Vào phòng</button>
+      <p id="menu-error" class="error"></p>
+      <button id="btn-change-skin" class="secondary">◀ Đổi trang phục</button>
+    </section>
+
+    <!-- Chờ đối thủ -->
+    <section id="screen-wait" class="screen hidden">
+      <h2>Mã phòng</h2>
+      <div id="wait-code" class="bigcode">----</div>
+      <p class="hint">Gửi mã này cho bạn bè, bạn ấy bấm "Vào phòng" và nhập mã là chơi được.</p>
+      <p class="hint">Đang chờ đối thủ...</p>
+      <button id="btn-cancel" class="secondary">Hủy</button>
+    </section>
+
+    <section id="screen-game" class="screen hidden">
+      <div id="info">
+        <span>Phòng: <b id="room-code">----</b></span>
+      </div>
+      <div id="scores">
+        <div id="score-me" class="side"></div>
+        <div id="score-opp" class="side"></div>
+      </div>
+      <div id="canvas-wrap">
+        <canvas id="board" width="400" height="400"></canvas>
+        <div id="overlay" class="hidden"></div>
+      </div>
+      <button id="btn-rematch" class="hidden">Chơi lại</button>
+      <button id="btn-home" class="secondary hidden">🏠 Về trang chủ</button>
+      <div id="pad">
+        <button data-dir="up" class="up">▲</button>
+        <button data-dir="left" class="left">◀</button>
+        <button data-dir="right" class="right">▶</button>
+        <button data-dir="down" class="down">▼</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/view.js"></script>
+  <script src="js/controller.js"></script>
+</body>
+</html>
