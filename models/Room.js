@@ -16,10 +16,11 @@ class Room {
       { color: 1, acc: 'none' },
     ]; // màu + phụ kiện của từng người
     this.ready = new Set(); // index người đã chọn xong ở phòng chờ
+    this.solo = false; // true = phòng chơi thử 1 mình
   }
 
   isFull() {
-    return this.players.length >= 2;
+    return this.solo || this.players.length >= 2; // phòng chơi thử coi như đã đầy
   }
 
   addPlayer(id) {
@@ -32,7 +33,7 @@ class Room {
   }
 
   newGame() {
-    this.game = new SnakeGame();
+    this.game = new SnakeGame(this.solo);
   }
 }
 

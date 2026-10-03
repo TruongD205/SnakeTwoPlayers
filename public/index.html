@@ -2,7 +2,11 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#14161c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Rắn 2 người</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -28,6 +32,7 @@
       <input id="input-code" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="Nhập mã 4 số" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')" />
       <button id="btn-join">Vào phòng</button>
       <p id="menu-error" class="error"></p>
+      <button id="btn-solo" class="secondary">🧪 Chơi thử 1 mình</button>
       <button id="btn-change-skin" class="secondary">◀ Đổi trang phục</button>
     </section>
 
@@ -52,13 +57,16 @@
         <canvas id="board" width="400" height="400"></canvas>
         <div id="overlay" class="hidden"></div>
       </div>
-      <button id="btn-rematch" class="hidden">Chơi lại</button>
-      <button id="btn-home" class="secondary hidden">🏠 Về trang chủ</button>
-      <div id="pad">
-        <button data-dir="up" class="up">▲</button>
-        <button data-dir="left" class="left">◀</button>
-        <button data-dir="right" class="right">▶</button>
-        <button data-dir="down" class="down">▼</button>
+      <div id="controls">
+        <button id="btn-rematch" class="hidden">Chơi lại</button>
+        <button id="btn-home" class="secondary hidden">🏠 Về trang chủ</button>
+        <p id="kbd-hint">Dùng phím mũi tên hoặc W A S D để điều khiển</p>
+        <div id="pad">
+          <button data-dir="up" class="up">▲</button>
+          <button data-dir="left" class="left">◀</button>
+          <button data-dir="right" class="right">▶</button>
+          <button data-dir="down" class="down">▼</button>
+        </div>
       </div>
     </section>
   </main>

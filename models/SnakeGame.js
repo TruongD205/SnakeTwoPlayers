@@ -15,11 +15,14 @@ const START = [
 ];
 
 class SnakeGame {
-  constructor() {
+  // solo = chế độ chơi thử 1 mình: chỉ có rắn số 0, không mất mạng, không kết thúc.
+  constructor(solo = false) {
+    this.solo = solo;
     this.width = W;
     this.height = H;
     this.lives = [LIVES, LIVES];
     this.snakes = [this._makeSnake(0, 10), this._makeSnake(1, 10)];
+    if (solo) this.snakes[1].body = [];
     this.food = null;
     this.roundEnded = false; // có người vừa mất mạng, chờ hồi sinh
     this.over = false; // hết mạng
@@ -37,16 +40,19 @@ class SnakeGame {
         { x: x - 2 * d.x, y: y - 2 * d.y },
       ],
       dir,
-      nextDir: dir,
+      queue: [],
       alive: true,
     };
   }
 
+  // Hàng đợi hướng đi: bấm nhanh "trái rồi xuống" thì cả 2 lệnh đều được giữ,
+  // tick này rẽ trái, tick sau rẽ xuống (trước đây lệnh sau đè mất lệnh trước).
   setDirection(playerIndex, dir) {
     const s = this.snakes[playerIndex];
     if (!s || !DIRS[dir]) return;
-    if (OPPOSITE[dir] === s.dir) return; // không quay đầu 180 độ
-    s.nextDir = dir;
+    const last = s.queue.length ? s.queue[s.queue.length - 1] : s.dir;
+    if (dir === last || OPPOSITE[dir] === last) return; // bỏ lệnh trùng và không quay đầu 180 độ
+    if (s.queue.length < 3) s.queue.push(dir);
   }
 
   _occupied() {
@@ -59,7 +65,9 @@ class SnakeGame {
 
   _spawnFood() {
     const taken = new Set();
-    this.snakes.forEach((s) => s.body.forEach((c) => taken.add(c.x + ',' + c.y)));
+    this.snakes.forEach((s) => {
+      if (s.alive) s.body.forEach((c) => taken.add(c.x + ',' + c.y));
+    });
     const free = [];
     for (let x = 0; x < W; x++)
       for (let y = 0; y < H; y++) if (!taken.has(x + ',' + y)) free.push({ x, y });
@@ -69,8 +77,9 @@ class SnakeGame {
   tick() {
     if (this.over || this.roundEnded) return;
     let ate = false;
-    this.snakes.forEach((s) => {
-      s.dir = s.nextDir;
+    this.snakes.forEach((s, i) => {
+      if (this.solo && i === 1) return;
+      if (s.queue.length) s.dir = s.queue.shift(); // mỗi tick lấy 1 lệnh rẽ trong hàng đợi
       const d = DIRS[s.dir];
       const head = { x: s.body[0].x + d.x, y: s.body[0].y + d.y };
       s.body.unshift(head);
@@ -79,6 +88,7 @@ class SnakeGame {
     });
 
     this.snakes.forEach((s, i) => {
+      if (this.solo && i === 1) return;
       const h = s.body[0];
       const other = this.snakes[1 - i];
       const hitWall = h.x < 0 || h.y < 0 || h.x >= W || h.y >= H;
@@ -91,8 +101,9 @@ class SnakeGame {
 
     const dead = this.snakes.map((s, i) => (s.alive ? -1 : i)).filter((i) => i >= 0);
     if (dead.length === 0) return;
-    dead.forEach((i) => this.lives[i]--);
+    if (!this.solo) dead.forEach((i) => this.lives[i]--); // chơi thử: không mất mạng
     this.roundEnded = true;
+    if (this.solo) return;
     const out = this.lives.map((l, i) => (l <= 0 ? i : -1)).filter((i) => i >= 0);
     if (out.length) {
       this.over = true;
@@ -121,7 +132,7 @@ class SnakeGame {
       this.snakes[i] = best || this._makeSnake(i, 10);
       this.snakes[i].body.forEach((c) => taken.add(c.x + ',' + c.y));
     });
-    this.snakes.forEach((s) => (s.nextDir = s.dir));
+    this.snakes.forEach((s) => (s.queue = []));
     this.roundEnded = false;
     if (!this.food) this._spawnFood();
   }
@@ -136,6 +147,7 @@ class SnakeGame {
       roundEnded: this.roundEnded,
       over: this.over,
       winner: this.winner,
+      solo: this.solo,
     };
   }
 }

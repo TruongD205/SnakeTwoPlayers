@@ -23,11 +23,12 @@ const view = {
     if (screen === 'wait') return (this.$('wait-code').textContent = m.roomCode || '----');
 
     this.$('room-code').textContent = m.roomCode || '----';
-    this.drawBoard(m);
+    this.drawBoard(m, m.status === 'playing' ? 0 : 1);
     this.drawScores(m);
     this.drawOverlay(m);
     this.drawRematch(m);
-    this.$('btn-home').classList.toggle('hidden', m.status !== 'ended' && m.status !== 'left');
+    const solo = !!(m.game && m.game.solo);
+    this.$('btn-home').classList.toggle('hidden', !solo && m.status !== 'ended' && m.status !== 'left');
   },
 
   // ---------- Trang chủ: chọn màu + phụ kiện ----------
@@ -190,9 +191,20 @@ const view = {
     }
   },
 
-  drawBoard(m) {
+  // Đặt độ phân giải canvas = kích thước hiển thị x mật độ điểm ảnh -> sắc nét trên màn rộng và iPhone/Android retina.
+  fitCanvas(canvas) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const size = Math.round(canvas.clientWidth * dpr);
+    if (size > 0 && canvas.width !== size) {
+      canvas.width = size;
+      canvas.height = size;
+    }
+  },
+
+  drawBoard(m, t = 1) {
     const game = m.game;
     const canvas = this.$('board');
+    this.fitCanvas(canvas);
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!game) return;
@@ -208,15 +220,24 @@ const view = {
       ctx.fillRect(fx - 1, fy - cs * 0.5, 3, cs * 0.18);
     }
     game.snakes.forEach((s, i) => {
+      if (!s.body.length) return; // chế độ chơi thử: không có rắn đối thủ
       const skin = m.skins[i];
       const base = s.alive ? this.PALETTE[skin.color] : '#777';
       const n = s.body.length;
+      const prev = m.prevGame && m.prevGame.snakes[i].body;
+      // Vị trí vẽ = nội suy từ vị trí tick trước -> tick hiện tại (0..1)
+      const pos = s.body.map((c, k) => {
+        if (!prev || t >= 1) return { x: c.x, y: c.y };
+        const o = prev[Math.min(k, prev.length - 1)];
+        if (Math.abs(c.x - o.x) + Math.abs(c.y - o.y) > 1) return { x: c.x, y: c.y }; // hồi sinh, không nội suy
+        return { x: o.x + (c.x - o.x) * t, y: o.y + (c.y - o.y) * t };
+      });
       // thân tròn, nhỏ dần về đuôi
       for (let k = n - 1; k >= 1; k--) {
-        const c = s.body[k];
-        const t = k / n;
-        const r = cs * (0.46 - 0.16 * t);
-        ctx.globalAlpha = 1 - 0.3 * t;
+        const c = pos[k];
+        const f = k / n;
+        const r = cs * (0.46 - 0.16 * f);
+        ctx.globalAlpha = 1 - 0.3 * f;
         ctx.fillStyle = base;
         ctx.beginPath();
         ctx.arc((c.x + 0.5) * cs, (c.y + 0.5) * cs, r, 0, Math.PI * 2);
@@ -233,7 +254,7 @@ const view = {
       const nx = s.body[1] || h;
       const dx = Math.sign(h.x - nx.x) || 1;
       const dy = Math.sign(h.y - nx.y);
-      this.drawHead(ctx, h.x * cs, h.y * cs, cs, dx * (dy ? 0 : 1), dy, base, skin.acc, !s.alive);
+      this.drawHead(ctx, pos[0].x * cs, pos[0].y * cs, cs, dx * (dy ? 0 : 1), dy, base, skin.acc, !s.alive);
     });
   },
 
@@ -246,7 +267,7 @@ const view = {
     };
     const me = m.you;
     this.$('score-me').innerHTML = '<span class="me">Bạn</span><br>' + hearts(me) + '<br>Dài: ' + (g ? g.snakes[me].body.length : 3);
-    this.$('score-opp').innerHTML = 'Đối thủ<br>' + hearts(1 - me);
+    this.$('score-opp').innerHTML = g && g.solo ? 'Chơi thử<br>Không giới hạn mạng' : 'Đối thủ<br>' + hearts(1 - me);
   },
 
   drawOverlay(m) {

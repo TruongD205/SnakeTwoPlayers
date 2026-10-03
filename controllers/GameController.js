@@ -14,6 +14,7 @@ class GameController {
 
   register(socket) {
     socket.on('create-room', (skin) => this.createRoom(socket, skin));
+    socket.on('solo-room', (skin) => this.soloRoom(socket, skin));
     socket.on('join-room', (data) => this.joinRoom(socket, data));
     socket.on('leave-room', () => this.leave(socket));
     socket.on('dir', (dir) => this.setDir(socket, dir));
@@ -27,6 +28,18 @@ class GameController {
     const idx = this._enter(socket, room);
     this._applySkin(room, idx, skin);
     socket.emit('room-joined', { code: room.code, you: idx });
+  }
+
+  // Chơi thử 1 mình: phòng riêng chỉ có 1 rắn, không cần đối thủ, bắt đầu ngay.
+  soloRoom(socket, skin) {
+    this.leave(socket);
+    const room = this.rooms.create();
+    room.solo = true;
+    const idx = this._enter(socket, room);
+    this._applySkin(room, idx, skin);
+    socket.emit('room-joined', { code: room.code, you: idx });
+    room.newGame();
+    this.startCountdown(room);
   }
 
   joinRoom(socket, data) {

@@ -18,6 +18,8 @@ socket.on("countdown", (n) => {
 });
 
 socket.on("state", ({ status, game, skins }) => {
+  model.prevGame = model.status === "playing" && status === "playing" ? model.game : null;
+  model.stateAt = performance.now();
   model.status = status;
   model.game = game;
   model.skins = skins;
@@ -65,6 +67,7 @@ $("btn-change-skin").onclick = () => {
   view.render(model);
 };
 $("btn-create").onclick = () => socket.emit("create-room", model.mySkin);
+$("btn-solo").onclick = () => socket.emit("solo-room", model.mySkin);
 $("btn-join").onclick = () => socket.emit("join-room", { code: $("input-code").value, skin: model.mySkin });
 $("btn-cancel").onclick = goHome;
 $("btn-rematch").onclick = () => socket.emit("rematch");
@@ -79,6 +82,27 @@ document.querySelectorAll("#pad button").forEach((b) => {
   b.addEventListener("touchstart", fire, { passive: false });
   b.addEventListener("mousedown", fire);
 });
+
+// Vuốt trên bàn chơi để đổi hướng (tiện cho điện thoại, ngoài 4 nút)
+let swipeStart = null;
+const boardEl = $("canvas-wrap");
+boardEl.addEventListener("touchstart", (e) => {
+  const t = e.changedTouches[0];
+  swipeStart = { x: t.clientX, y: t.clientY };
+}, { passive: true });
+boardEl.addEventListener("touchend", (e) => {
+  if (!swipeStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeStart.x;
+  const dy = t.clientY - swipeStart.y;
+  swipeStart = null;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; // chạm nhẹ, không phải vuốt
+  sendDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
+}, { passive: true });
+
+// Xoay màn hình / đổi kích thước cửa sổ -> vẽ lại cho vừa
+window.addEventListener("resize", () => view.render(model));
+window.addEventListener("orientationchange", () => setTimeout(() => view.render(model), 200));
 
 const KEYS = {
   ArrowUp: "up",
@@ -98,5 +122,15 @@ document.addEventListener("keydown", (e) => {
     sendDir(d);
   }
 });
+
+// Vòng lặp vẽ ~60fps: server gửi mỗi 150ms nên ta nội suy vị trí rắn giữa 2 lần cập nhật cho mượt.
+const TICK_MS = 150;
+function animate() {
+  if (model.status === "playing" && model.game) {
+    view.drawBoard(model, Math.min((performance.now() - model.stateAt) / TICK_MS, 1));
+  }
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
 
 view.render(model);
