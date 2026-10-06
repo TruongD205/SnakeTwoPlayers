@@ -23,6 +23,7 @@ const view = {
     if (screen === 'wait') return (this.$('wait-code').textContent = m.roomCode || '----');
 
     this.$('room-code').textContent = m.roomCode || '----';
+    this.fitCanvas(this.$('board'));
     this.drawBoard(m, m.status === 'playing' ? 0 : 1);
     this.drawScores(m);
     this.drawOverlay(m);
@@ -270,9 +271,9 @@ const view = {
     }
   },
 
-  // Đặt độ phân giải canvas = kích thước hiển thị x mật độ điểm ảnh -> sắc nét trên màn rộng và iPhone/Android retina.
+  // Giới hạn tỉ lệ dpr tối đa 1.5 để điện thoại Retina/OLED không bị quá tải GPU khi render 60fps
   fitCanvas(canvas) {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const size = Math.round(canvas.clientWidth * dpr);
     if (size > 0 && canvas.width !== size) {
       canvas.width = size;
@@ -283,7 +284,6 @@ const view = {
   drawBoard(m, t = 1) {
     const game = m.game;
     const canvas = this.$('board');
-    this.fitCanvas(canvas);
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!game) return;

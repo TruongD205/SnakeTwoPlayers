@@ -73,14 +73,19 @@ $("btn-cancel").onclick = goHome;
 $("btn-rematch").onclick = () => socket.emit("rematch");
 $("btn-home").onclick = goHome;
 
+// Touch handling: phản hồi tức thì ngay khi chạm, không delay
 const sendDir = (d) => socket.emit("dir", d);
 document.querySelectorAll("#pad button").forEach((b) => {
+  const dir = b.dataset.dir;
   const fire = (e) => {
     e.preventDefault();
-    sendDir(b.dataset.dir);
+    e.stopPropagation();
+    sendDir(dir);
   };
   b.addEventListener("touchstart", fire, { passive: false });
-  b.addEventListener("mousedown", fire);
+  b.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") fire(e);
+  });
 });
 
 // Vuốt trên bàn chơi để đổi hướng (tiện cho điện thoại, ngoài 4 nút)
@@ -96,13 +101,17 @@ boardEl.addEventListener("touchend", (e) => {
   const dx = t.clientX - swipeStart.x;
   const dy = t.clientY - swipeStart.y;
   swipeStart = null;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; // chạm nhẹ, không phải vuốt
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return; // vuốt nhẹ là nhận
   sendDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
 }, { passive: true });
 
-// Xoay màn hình / đổi kích thước cửa sổ -> vẽ lại cho vừa
-window.addEventListener("resize", () => view.render(model));
-window.addEventListener("orientationchange", () => setTimeout(() => view.render(model), 200));
+// Xoay màn hình / đổi kích thước cửa sổ -> cập nhật lại canvas
+const handleResize = () => {
+  view.fitCanvas($("board"));
+  view.render(model);
+};
+window.addEventListener("resize", handleResize);
+window.addEventListener("orientationchange", () => setTimeout(handleResize, 150));
 
 const KEYS = {
   ArrowUp: "up",
@@ -123,11 +132,13 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// Vòng lặp vẽ ~60fps: server gửi mỗi 150ms nên ta nội suy vị trí rắn giữa 2 lần cập nhật cho mượt.
+// Vòng lặp vẽ nội suy mượt mà, hạn chế giật khi mobile sụt khung hình
 const TICK_MS = 150;
 function animate() {
   if (model.status === "playing" && model.game) {
-    view.drawBoard(model, Math.min((performance.now() - model.stateAt) / TICK_MS, 1));
+    const elapsed = performance.now() - model.stateAt;
+    const t = Math.min(Math.max(elapsed / TICK_MS, 0), 1);
+    view.drawBoard(model, t);
   }
   requestAnimationFrame(animate);
 }
